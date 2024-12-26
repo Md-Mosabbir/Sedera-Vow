@@ -2,7 +2,7 @@ type PaginationProps = {
   page: number
 
   totalPages: number
-  setLimits: (limit: number) => void
+  setLimit: (limit: number) => void
   updateParams: (param: string, value: string) => void
 }
 
@@ -10,7 +10,7 @@ const Pagination = ({
   page,
   totalPages,
 
-  setLimits,
+  setLimit,
   updateParams,
 }: PaginationProps) => {
   return (
@@ -30,7 +30,7 @@ const Pagination = ({
       </div>
       <select
         className="select w-full max-w-xs "
-        onChange={(e) => setLimits(parseInt(e.target.value))}
+        onChange={(e) => setLimit(parseInt(e.target.value))}
       >
         <option defaultValue={"10"}>10</option>
         <option>20</option>

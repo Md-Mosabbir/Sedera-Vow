@@ -4,12 +4,37 @@ import Pagination from "../components/Pagination"
 import Items from "../components/ProductItems"
 import { Product } from "../types/Product"
 import { Link } from "react-router-dom"
+import { useDynamicParams } from "../hooks/useDynamicParams"
 
 const Products = () => {
+  const { params, updateParams, setLimit } = useDynamicParams({
+    initialPage: "1",
+    initialSortBy: "createdAt",
+    initialOrder: "desc",
+    defaultLimit: 10,
+    allowedFilters: [
+      "page",
+      "sortBy",
+      "order",
+      "search",
+      "tier",
+      "category",
+      "minPrice",
+      "maxPrice",
+      "inStock",
+    ],
+  })
+
   const query = useQuery({
-    queryKey: ["shop"],
+    queryKey: ["shop", params],
     queryFn: async () => {
-      const response = await axiosInstance.get("/shop")
+      const response = await axiosInstance.get(
+        "/shop",
+
+        {
+          params,
+        },
+      )
 
       return response.data
     },
@@ -18,11 +43,17 @@ const Products = () => {
   if (query.isLoading) {
     return <div>Loading...</div>
   }
+  console.log(query.data)
 
   return (
     <>
       <div>
-        <Pagination />
+        <Pagination
+          totalPages={query.data.totalPages}
+          page={query.data.page}
+          updateParams={updateParams}
+          setLimit={setLimit}
+        />
       </div>
       <Link to="/create-product">
         <button className="bg-green-500 p-3 rounded-lg my-4 text-white">

@@ -15,7 +15,7 @@ export const getProducts = asyncHandler(async (req, res) => {
 
   // Filter, Search, and Sort
   const search = req.query.search || ""
-  const tiers = req.query.tier ? req.query.tier.split(",") : []
+  const tiers = req.query.tiers ? req.query.tiers.split(",") : []
   const category = req.query.category || ""
   const minPrice = parseFloat(req.query.minPrice) || 0
   const maxPrice = parseFloat(req.query.maxPrice) || Infinity

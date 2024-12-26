@@ -8,6 +8,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import fs from "fs"
 import Product from "../models/Product.js"
 import Order from "../models/Order.js"
+import mongoose from "mongoose"
 
 // @desc Sign-up user
 // @route POST /users/sign-up
@@ -299,21 +300,197 @@ export const getUserProfile = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc Get wishlist
+// @route GET /users/wishlist
+// @access Private
+export const getWishlist = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1
+  const limit = parseInt(req.query.limit) || 10
+  const skip = (page - 1) * limit
+
+  // Find the user and populate `productId` in the `wishlist` array
+  const user = await User.findById(req.user.id).populate({
+    path: "wishlist.productId", // Correctly populate the `productId` field
+    select: "name tier category imageUrl", // Select only the necessary fields
+  })
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" })
+  }
+
+  const totalWishlist = user.wishlist.length
+
+  if (totalWishlist === 0) {
+    return res.status(200).json({ wishlist: [], message: "Wishlist is empty" })
+  }
+
+  // Apply pagination to the `wishlist` array
+  const paginatedWishlist = user.wishlist.slice(skip, skip + limit)
+  const totalPages = Math.ceil(totalWishlist / limit)
+
+  // Flatten the `wishlist` to return only the populated product details
+  const flattenedWishlist = paginatedWishlist.map((item) => item.productId)
+
+  res.status(200).json({
+    wishlist: flattenedWishlist,
+    totalWishlist,
+    totalPages,
+    currentPage: page,
+  })
+})
+
+// @desc Add to wishlist
+// @route POST /users/wishlist/:id
+// @access Private
+
+export const addToWishlist = asyncHandler(async (req, res) => {
+  const userId = req.user.id
+  const productId = req.params.id
+
+  // Find the user
+  const user = await User.findById(userId)
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" })
+  }
+
+  // Find the product
+  const product = await Product.findById(productId)
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" })
+  }
+
+  // Check if the product is already in the user's wishlist
+  const isProductInWishlist = user.wishlist.some(
+    (item) => item.productId.toString() === productId,
+  )
+
+  if (isProductInWishlist) {
+    return res.status(400).json({ message: "Product already in wishlist" })
+  }
+
+  // Add the product to the wishlist
+  user.wishlist.push({ productId })
+
+  await user.save()
+
+  res.status(200).json({ message: "Product added to wishlist" })
+})
+
+// @desc Remove from wishlist
+// @route DELETE /users/wishlist/:id
+// @access Private
+
+export const removeFromWishlist = asyncHandler(async (req, res) => {
+  const userId = req.user.id
+  const productId = req.params.id
+
+  // Find the user
+  const user = await User.findById(userId)
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" })
+  }
+
+  // Check if the product exists in the wishlist
+  const isProductInWishlist = user.wishlist.some(
+    (item) => item.productId.toString() === productId,
+  )
+
+  if (!isProductInWishlist) {
+    return res.status(400).json({ message: "Product not in wishlist" })
+  }
+
+  // Remove the product from the wishlist
+  user.wishlist = user.wishlist.filter(
+    (item) => item.productId.toString() !== productId,
+  )
+
+  await user.save()
+
+  res.status(200).json({ message: "Product removed from wishlist" })
+})
+
 // @desc Get user orders and wishlist
 // @route GET /users/orders
 // @access Private
 
 export const getUserOrders = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id).populate({
-    path: "orders",
-    select: "_id createdAt shippingAddress orderStatus",
-  })
+  const userId = new mongoose.Types.ObjectId(req.user.id)
 
-  if (user) {
-    res.json(user.orders)
-  } else {
-    res.status(404).json({ message: "User not found" })
+  // Pagination parameters
+  const page = parseInt(req.query.page) || 1
+  const limit = parseInt(req.query.limit) || 10
+  const skip = (page - 1) * limit
+
+  // Search and Sort Parameters
+  const search = req.query.search || "" // Search in order details
+  const types = req.query.types ? req.query.types.split(",") : []
+
+  console.log(req.query)
+  const sort = req.query.sort || "createdAt" // Sort field
+  const order = req.query.order === "asc" ? 1 : -1 // Sort order
+
+  // Enum values for orderStatus from the schema
+  const orderStatusEnum = ["Processing", "Shipped", "Delivered", "Cancelled"]
+
+  // Match conditions
+  const matchCondition = { user: userId }
+
+  if (types.length > 0) {
+    // Check if the provided types are valid orderStatus values
+    const validStatuses = types.filter(
+      (type) => orderStatusEnum.includes(type), // Validate type against the orderStatus enum
+    )
+
+    if (validStatuses.length > 0) {
+      matchCondition.orderStatus = { $in: validStatuses } // Match any of the valid statuses
+    }
   }
+
+  if (search) {
+    matchCondition.$or = [
+      { "shippingAddress.city": { $regex: search, $options: "i" } },
+      { "shippingAddress.state": { $regex: search, $options: "i" } },
+      { "shippingAddress.postalCode": { $regex: search, $options: "i" } },
+    ]
+  }
+
+  // Total Count Pipeline
+  const totalPipeline = [{ $match: matchCondition }, { $count: "total" }]
+  const totalResult = await Order.aggregate(totalPipeline)
+  const totalOrders = totalResult.length > 0 ? totalResult[0].total : 0
+
+  if (totalOrders === 0) {
+    return res.status(200).json({ orders: [], message: "No orders found" })
+  }
+
+  // Orders Fetch Pipeline
+  const ordersPipeline = [
+    { $match: matchCondition },
+    { $sort: { [sort]: order } },
+    { $skip: skip },
+    { $limit: limit },
+    {
+      $project: {
+        _id: 1,
+        createdAt: 1,
+        shippingAddress: 1,
+        orderStatus: 1,
+      },
+    },
+  ]
+
+  const orders = await Order.aggregate(ordersPipeline)
+  const totalPages = Math.ceil(totalOrders / limit)
+
+  res.status(200).json({
+    orders,
+    totalOrders,
+    totalPages,
+    currentPage: page,
+  })
 })
 
 // @desc Get user order by ID

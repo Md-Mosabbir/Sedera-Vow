@@ -4,10 +4,16 @@ import OrderItems from "../components/OrderItems"
 import { Order } from "../types/Order"
 import { Link } from "react-router-dom"
 import Pagination from "../components/Pagination"
-import { useOrderParams } from "../hooks/useOrderParams"
+import { useDynamicParams } from "../hooks/useDynamicParams"
 
 const Orders = () => {
-  const { params, updateParams, setLimit } = useOrderParams()
+  const { params, updateParams, setLimit } = useDynamicParams({
+    initialPage: "1",
+    initialSortBy: "createdAt",
+    initialOrder: "desc",
+    defaultLimit: 10,
+    allowedFilters: ["page", "sortBy", "order"],
+  })
 
   const orders = useQuery({
     queryKey: ["admin", "orders", params],
@@ -35,7 +41,7 @@ const Orders = () => {
           totalPages={ordersData.totalPages}
           page={ordersData.page}
           updateParams={updateParams}
-          setLimits={setLimit}
+          setLimit={setLimit}
         />
       </div>
       {ordersData.orders.map((order: Order) => (
