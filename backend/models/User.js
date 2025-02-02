@@ -38,7 +38,7 @@ const UserSchema = new mongoose.Schema({
   },
   cart: [
     {
-      productId: {
+      product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
         required: true,
@@ -67,7 +67,7 @@ const UserSchema = new mongoose.Schema({
   ],
   wishlist: [
     {
-      productId: {
+      product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
       },

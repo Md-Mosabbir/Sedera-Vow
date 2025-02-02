@@ -110,8 +110,8 @@ export const getProducts = asyncHandler(async (req, res) => {
 
 export const getProductById = asyncHandler(async (req, res) => {
   const product = await Shop.findById(req.params.id).populate({
-    path: "reviews.userId",
-    select: "username", // Select only the 'name' field to include in the response
+    path: "reviews.user",
+    select: "username profilePicture",
   })
 
   if (product) {
@@ -146,73 +146,92 @@ export const getFeaturedProducts = asyncHandler(async (req, res) => {
 
 export const postRating = asyncHandler(async (req, res) => {
   // Find user in database
-
   const user = await User.findById(req.user.id)
-
   if (!user) {
-    res.status(404).json({ message: "User not found" })
+    return res.status(404).json({ message: "User not found" })
   }
 
   // Find product in database
   const product = await Shop.findById(req.params.id)
-
   if (!product) {
-    res.status(404).json({ message: "Product not found" })
+    return res.status(404).json({ message: "Product not found" })
   }
 
-  // Check using express validator
-  // Check if rating is empty and between 1 and 5 and is an integer value
-  await check("rating", "Rating is required")
-    .notEmpty()
-    .isInt({ min: 1, max: 5 })
-    .run(req)
+  // Validate rating if provided
+  if (req.body.rating !== undefined) {
+    await check("rating", "Rating is required")
+      .notEmpty()
+      .isInt({ min: 1, max: 5 })
+      .run(req)
+  }
+
+  // Validate comment if provided
+  if (req.body.comment !== undefined) {
+    await check("comment", "Comment must be between 1 and 500 characters")
+      .optional()
+      .isLength({ min: 1, max: 500 })
+      .run(req)
+  }
 
   const errors = validationResult(req)
-
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() })
   }
 
-  // Check if rating is an integer
-  if (!Number.isInteger(req.body.rating)) {
-    console.log(req.body.rating)
+  const { rating, comment } = req.body
+
+  if (!rating && !comment) {
+    return res.status(400).json({
+      message: "You must provide either a rating or a comment.",
+    })
   }
 
-  // Integer rating
-  const rating = req.body.rating
-
-  // Find user's review
+  // Find user's review for the product
   const review = product.reviews.find(
-    (review) => review.userId.toString() === req.user.id.toString(),
+    (review) => review.user.toString() === req.user.id.toString(),
   )
 
-  // If user has already reviewed the product
-
+  // If user has already reviewed, update rating and/or comment
   if (review) {
-    // Update rating
-    product.averageRating =
-      (product.averageRating * product.numberOfReviews -
-        review.rating +
-        rating) /
-      product.numberOfReviews
-    review.rating = rating
-  } else {
-    // Add new rating
-    product.reviews.push({
-      userId: req.user.id,
-      rating,
-    })
+    if (rating !== undefined) {
+      product.averageRating =
+        (product.averageRating * product.numberOfReviews -
+          review.rating +
+          rating) /
+        product.numberOfReviews
+      review.rating = rating
+    }
 
-    product.numberOfReviews++
-    product.averageRating =
-      (product.averageRating * (product.numberOfReviews - 1) + rating) /
-      product.numberOfReviews
+    if (comment !== undefined) {
+      review.comment = comment // Update the comment if provided
+    }
+  } else {
+    // If no review exists, create a new review
+    const newReview = {
+      user: req.user.id,
+      rating: rating !== undefined ? rating : null, // Use null for no rating
+      comment: comment || "", // Default to empty string if no comment provided
+    }
+
+    product.reviews.push(newReview)
+
+    // Increment numberOfReviews and update averageRating only if a valid rating is provided
+    if (rating !== undefined) {
+      product.numberOfReviews++
+      product.averageRating =
+        (product.averageRating * (product.numberOfReviews - 1) + rating) /
+        product.numberOfReviews
+    }
   }
 
   await product.save()
 
-  res.status(201).json({ message: "Rating added" })
+  return res.status(201).json({ message: "Rating and/or comment added" })
 })
+
+// @desc Get user rating
+// @route GET /shop/:id/rating
+// @access Private
 
 export const getUserRating = asyncHandler(async (req, res) => {
   // Find user in database
@@ -232,7 +251,7 @@ export const getUserRating = asyncHandler(async (req, res) => {
 
   // Find user's review
   const review = product.reviews.find(
-    (review) => review.userId.toString() === req.user.id.toString(),
+    (review) => review.user.toString() === req.user.id.toString(),
   )
 
   if (review) {

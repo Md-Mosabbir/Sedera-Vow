@@ -9,7 +9,7 @@ import Order from "../models/Order.js"
 // @access  Private
 export const getCart = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).populate({
-    path: "cart.productId",
+    path: "cart.product",
     select: "name tier imageUrl description",
   })
 
@@ -57,7 +57,7 @@ export const addToCart = asyncHandler(async (req, res) => {
 
   // Find existing product in cart
   const existingProduct = user.cart.find(
-    (p) => p.productId.toString() === productId,
+    (p) => p.product.toString() === productId,
   )
 
   // Check stock and update cart
@@ -76,7 +76,7 @@ export const addToCart = asyncHandler(async (req, res) => {
     existingProduct.subtotal = existingProduct.quantity * product.price
   } else {
     user.cart.push({
-      productId,
+      product,
       quantity: quantityNumber,
       price: product.price,
       subtotal: quantityNumber * product.price,
@@ -114,7 +114,7 @@ export const removeFromCart = asyncHandler(async (req, res) => {
 
   // Find existing product in cart
   const existingProductIndex = user.cart.findIndex(
-    (p) => p.productId.toString() === productId,
+    (p) => p.product.toString() === productId,
   )
 
   if (existingProductIndex === -1) {
@@ -163,15 +163,15 @@ export const createOrder = asyncHandler(async (req, res) => {
     }
 
     const populatedCart = await User.findById(req.user.id).populate({
-      path: "cart.productId",
+      path: "cart.product",
       select: "name tier imageUrl",
     })
 
     const orderItems = populatedCart.cart.map((item) => ({
-      productId: item.productId._id,
-      name: item.productId.name,
-      tier: item.productId.tier,
-      imageUrl: item.productId.imageUrl,
+      productId: item.product._id,
+      name: item.product.name,
+      tier: item.product.tier,
+      imageUrl: item.product.imageUrl,
       quantity: item.quantity,
       price: item.price,
       subtotal: item.subtotal,

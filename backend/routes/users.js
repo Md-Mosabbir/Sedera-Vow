@@ -12,6 +12,7 @@ import {
   getWishlist,
   addToWishlist,
   removeFromWishlist,
+  updateUserProfile,
 } from "../controllers/userController.js"
 import protect from "../middleware/auth.js"
 const router = express.Router()
@@ -21,6 +22,7 @@ router.post("/sign-up", upload.single("image"), registerUser)
 router.post("/sign-in", loginUser)
 router.post("/:username/verify", verifyUser)
 router.get("/profile", protect, getUserProfile)
+router.post("/edit", upload.single("image"), protect, updateUserProfile)
 
 router.get("/orders", protect, getUserOrders)
 router.post("/order", protect, makeOrder)

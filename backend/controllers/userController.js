@@ -232,32 +232,27 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
     .run(req)
 
   const errors = validationResult(req)
-
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() })
   }
 
-  const user = await User.findByIdAndUpdate(req.user.id)
-
+  // Find user first
+  const user = await User.findById(req.user.id)
   if (!user) {
     return res.status(404).json({ message: "User not found" })
   }
 
   const { username, email, password } = req.body
 
-  if (username) {
-    user.username = username
-  }
-
-  if (email) {
-    user.email = email
-  }
-
+  // Update fields if provided
+  if (username) user.username = username
+  if (email) user.email = email
   if (password) {
     const salt = await bcrypt.genSalt(10)
     user.password = await bcrypt.hash(password, salt)
   }
 
+  // Handle profile picture upload
   if (req.file) {
     const localFilePath = req.file.path
     const uploadedImage = await uploadOnCloudinary(localFilePath)
@@ -266,9 +261,11 @@ export const updateUserProfile = asyncHandler(async (req, res) => {
       return res.status(500).json({ message: "Image upload failed" })
     }
 
-    fs.unlinkSync(localFilePath)
+    fs.unlinkSync(localFilePath) // Remove the local file after successful upload
     user.profilePicture = uploadedImage.url
   }
+
+  console.log(req.body)
 
   await user.save()
 
@@ -300,18 +297,19 @@ export const getUserProfile = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc Get wishlist
+// @desc Get user's wishlist
 // @route GET /users/wishlist
 // @access Private
+
 export const getWishlist = asyncHandler(async (req, res) => {
   const page = parseInt(req.query.page) || 1
   const limit = parseInt(req.query.limit) || 10
   const skip = (page - 1) * limit
 
-  // Find the user and populate `productId` in the `wishlist` array
+  // Find the user and populate `product` in the `wishlist` array
   const user = await User.findById(req.user.id).populate({
-    path: "wishlist.productId", // Correctly populate the `productId` field
-    select: "name tier category imageUrl", // Select only the necessary fields
+    path: "wishlist.product", // Correctly populate the `product` field
+    select: "name price category imageUrl price averageRating numberOfReviews",
   })
 
   if (!user) {
@@ -329,7 +327,7 @@ export const getWishlist = asyncHandler(async (req, res) => {
   const totalPages = Math.ceil(totalWishlist / limit)
 
   // Flatten the `wishlist` to return only the populated product details
-  const flattenedWishlist = paginatedWishlist.map((item) => item.productId)
+  const flattenedWishlist = paginatedWishlist.map((item) => item.product)
 
   res.status(200).json({
     wishlist: flattenedWishlist,
@@ -363,7 +361,7 @@ export const addToWishlist = asyncHandler(async (req, res) => {
 
   // Check if the product is already in the user's wishlist
   const isProductInWishlist = user.wishlist.some(
-    (item) => item.productId.toString() === productId,
+    (item) => item.product.toString() === productId,
   )
 
   if (isProductInWishlist) {
@@ -371,7 +369,7 @@ export const addToWishlist = asyncHandler(async (req, res) => {
   }
 
   // Add the product to the wishlist
-  user.wishlist.push({ productId })
+  user.wishlist.push({ product: productId })
 
   await user.save()
 
@@ -395,7 +393,7 @@ export const removeFromWishlist = asyncHandler(async (req, res) => {
 
   // Check if the product exists in the wishlist
   const isProductInWishlist = user.wishlist.some(
-    (item) => item.productId.toString() === productId,
+    (item) => item.product.toString() === productId,
   )
 
   if (!isProductInWishlist) {
@@ -404,7 +402,7 @@ export const removeFromWishlist = asyncHandler(async (req, res) => {
 
   // Remove the product from the wishlist
   user.wishlist = user.wishlist.filter(
-    (item) => item.productId.toString() !== productId,
+    (item) => item.product.toString() !== productId,
   )
 
   await user.save()
@@ -428,7 +426,6 @@ export const getUserOrders = asyncHandler(async (req, res) => {
   const search = req.query.search || "" // Search in order details
   const types = req.query.types ? req.query.types.split(",") : []
 
-  console.log(req.query)
   const sort = req.query.sort || "createdAt" // Sort field
   const order = req.query.order === "asc" ? 1 : -1 // Sort order
 
