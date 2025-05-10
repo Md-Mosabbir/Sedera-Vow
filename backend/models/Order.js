@@ -40,45 +40,43 @@ const OrderItemSchema = new mongoose.Schema({
   },
 })
 
-const OrderSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+const OrderSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
-  orderItems: [OrderItemSchema],
+    orderItems: [OrderItemSchema],
 
-  shippingAddress: {
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: String, required: true },
-  },
-  paymentMethod: {
-    type: String,
-    required: true,
-    default: "Cash on Delivery",
-  },
-  phoneNumber: {
-    type: String,
-    required: true,
-  },
+    shippingAddress: {
+      address: { type: String, required: true },
+      city: { type: String, required: true },
+      postalCode: { type: String, required: true },
+    },
+    paymentMethod: {
+      type: String,
+      required: true,
+      default: "Cash on Delivery",
+    },
+    phoneNumber: {
+      type: String,
+      required: true,
+    },
 
-  orderStatus: {
-    type: String,
-    required: true,
-    enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
-    default: "Processing",
+    orderStatus: {
+      type: String,
+      required: true,
+      enum: ["Processing", "Shipped", "Delivered", "Cancelled"],
+      default: "Processing",
+    },
+    deliveredAt: {
+      type: Date,
+    },
   },
-  deliveredAt: {
-    type: Date,
-  },
-
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-})
+  { timestamps: true },
+)
 
 // Add a pre-save hook to the OrderItemSchema to populate the necessary fields from the Product model
 

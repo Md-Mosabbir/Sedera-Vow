@@ -7,61 +7,56 @@ const reviewSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 })
 
-const productSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  category: {
-    type: String,
-    required: true,
-  },
-  imageUrl: {
-    type: String,
-    required: true,
-  },
-  inStock: {
-    type: Boolean,
-    default: true,
-  },
-  numberInStock: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
-  reviews: [
-    {
-      type: reviewSchema,
+const productSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
     },
-  ],
-  averageRating: { type: Number, default: 0 },
-  numberOfReviews: { type: Number, default: 0 },
-  tier: {
-    type: String,
-    enum: ["Gold", "Diamond", "Platinum"],
-    required: true,
+    description: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    imageUrl: {
+      type: String,
+      required: true,
+    },
+    inStock: {
+      type: Boolean,
+      default: true,
+    },
+    numberInStock: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    reviews: [
+      {
+        type: reviewSchema,
+      },
+    ],
+    averageRating: { type: Number, default: 0 },
+    numberOfReviews: { type: Number, default: 0 },
+    tier: {
+      type: String,
+      enum: ["Gold", "Diamond", "Platinum"],
+      required: true,
+    },
+    featured: {
+      type: Boolean,
+      default: false,
+    },
   },
-  featured: {
-    type: Boolean,
-    default: false,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-})
+  { timestamps: true },
+)
 
 const Product = mongoose.model("Product", productSchema)
 
