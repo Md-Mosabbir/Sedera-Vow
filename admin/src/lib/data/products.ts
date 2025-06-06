@@ -2,15 +2,27 @@
 
 import { Product } from "@/types/Product";
 
-export const getProducts = async (): Promise<Product[]> => {
+export const getProducts = async (
+  queryString: string = "",
+): Promise<Product[]> => {
   try {
-    const res = await fetch(`${process.env.SEDERA_BASE_URL}/shop`, {
-      next: { revalidate: 60 },
-    });
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/shop${queryString}`,
+      {
+        next: { revalidate: 60 },
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch products: ${res.status} ${res.statusText}`,
+      );
+    }
 
     return res.json();
-  } catch (error: any) {
-    throw new Error("error ", error);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw new Error("An error occurred while fetching products");
   }
 };
 

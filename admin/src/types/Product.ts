@@ -28,3 +28,16 @@ export interface Review {
   _id: string;
   createdAt: string; // or Date
 }
+
+export type ProductFilterParams = {
+  search?: string;
+  tiers?: string[];
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: string | boolean;
+  sort?: string;
+  order?: 1 | -1;
+  page?: number;
+  limit?: number;
+};

@@ -1,75 +1,32 @@
-import { createProduct } from "../actions/admin";
+import { getProducts } from "@/lib/data/products";
+import { productFilterSchema } from "@/types/config/filters";
+import { parseFilters } from "@/utils/parseFilters";
+import { stringifyFilters } from "@/utils/stringifyFilters";
 
-const page = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-900 p-4">
-      <div className="w-full max-w-md rounded-lg bg-gray-800 p-8 shadow-xl">
-        <h2 className="mb-6 text-center text-3xl font-bold text-white">
-          Create Product
-        </h2>
-        <form
-          action={createProduct}
-          className="space-y-4"
-          encType="multipart/form-data"
-        >
-          <input
-            type="text"
-            name="name"
-            placeholder="Name"
-            required
-            className="block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-          />
-          <input
-            type="text"
-            name="description"
-            placeholder="Description"
-            required
-            className="block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-          />
-          <input
-            type="number"
-            name="price"
-            placeholder="Price"
-            required
-            className="block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-          />
-          <input
-            type="text"
-            name="category"
-            placeholder="Category"
-            required
-            className="block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-          />
-          <input
-            type="number"
-            name="numberInStock"
-            placeholder="Stock"
-            required
-            className="block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-          />
-          <input
-            type="text"
-            name="tier"
-            placeholder="Tier"
-            required
-            className="block w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white"
-          />
-          <input
-            type="file"
-            name="image"
-            required
-            className="block w-full text-white"
-          />
-          <button
-            type="submit"
-            className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-          >
-            Submit Product
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+type Props = {
+  searchParams: { [key: string]: string | string[] | undefined };
 };
 
-export default page;
+export default async function ShopPage({ searchParams }: Props) {
+  // Convert searchParams to URLSearchParams
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      params.set(key, value.join(","));
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+
+  const filters = parseFilters(params, productFilterSchema);
+  const queryString = stringifyFilters(filters);
+  const products = await getProducts(queryString);
+
+  return (
+    <main className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Shop</h1>
+      {JSON.stringify(products, null, 2)}
+    </main>
+  );
+}

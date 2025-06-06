@@ -3,11 +3,11 @@
 import { cookies } from "next/headers";
 
 export async function createProduct(formData: FormData) {
+  // Get your auth cookie
   const cookieStore = cookies();
-  const tokenCookie = (await cookieStore).get("token"); // Get your auth cookie
-
+  const tokenCookie = (await cookieStore).get("token");
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/create-product`,
+    `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/product`,
     {
       method: "POST",
       headers: {
@@ -15,6 +15,23 @@ export async function createProduct(formData: FormData) {
         Cookie: tokenCookie ? `token=${tokenCookie.value}` : "",
       },
       body: formData,
+    },
+  );
+
+  return res.json();
+}
+
+export async function setFeatured(id: string) {
+  const cookieStore = cookies();
+  const tokenCookie = (await cookieStore).get("token");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/product/${id}/featured`,
+    {
+      method: "PUT",
+      headers: {
+        Cookie: tokenCookie ? `token=${tokenCookie.value}` : "",
+      },
     },
   );
 
