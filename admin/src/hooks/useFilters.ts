@@ -1,16 +1,17 @@
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { parseFilters } from "@/utils/parseFilters";
-import { stringifyFilters } from "@/utils/stringifyFilters";
-import { useRouter } from "next/router";
 
 export function useFilters(schema: Record<string, any>) {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const currentParams = new URLSearchParams(router.asPath.split("?")[1]);
-  const filters = parseFilters(currentParams, schema);
+  const pathname = usePathname();
+
+  const filters = parseFilters(searchParams, schema);
 
   const setFilters = (key: string, value: any) => {
     const updatedFilters = { ...filters, [key]: value };
 
-    // If value is invalid (e.g. empty string, null), remove the key
+    // If value is invalid, remove the key
     if (
       value === "" ||
       value === null ||
@@ -20,8 +21,14 @@ export function useFilters(schema: Record<string, any>) {
       delete updatedFilters[key];
     }
 
-    const queryString = stringifyFilters(updatedFilters);
-    router.push(queryString);
+    const params = new URLSearchParams();
+    Object.entries(updatedFilters).forEach(([key, value]) => {
+      if (value !== undefined) {
+        params.set(key, String(value));
+      }
+    });
+
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   return { filters, setFilters };

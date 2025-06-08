@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { login } from "./actions/auth";
 
 export default async function Home() {
@@ -8,6 +9,7 @@ export default async function Home() {
           Admin Login
         </h2>
         <form action={login} className="space-y-6">
+          <Button>Yo</Button>
           <div>
             <label
               htmlFor="email"
