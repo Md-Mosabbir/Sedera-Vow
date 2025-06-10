@@ -2,7 +2,7 @@ import { parseFilters } from "@/utils/parseFilters";
 import { stringifyFilters } from "@/utils/stringifyFilters";
 import { productFilterSchema } from "@/types/config/filters";
 import { getProducts } from "@/lib/data/products";
-import DataTable from "@/modules/home";
+import DataTable from "@/modules/home/products";
 
 export default async function Products({
   searchParams,

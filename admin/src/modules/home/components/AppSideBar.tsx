@@ -1,14 +1,7 @@
-import {
-  BadgeDollarSign,
-  Calendar,
-  ChevronUp,
-  Home,
-  Inbox,
-  Package,
-  Search,
-  Settings,
-  User2,
-} from "lucide-react";
+"use client";
+
+import { BadgeDollarSign, ChevronUp, Package, User2 } from "lucide-react";
+import Link from "next/link";
 
 import {
   Sidebar,
@@ -32,12 +25,12 @@ import {
 const items = [
   {
     title: "Products",
-    url: "#",
+    url: "/home/products",
     icon: Package,
   },
   {
     title: "Orders",
-    url: "#",
+    url: "/home/orders",
     icon: BadgeDollarSign,
   },
 ];
@@ -53,10 +46,10 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <a href={item.url}>
+                    <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
-                    </a>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

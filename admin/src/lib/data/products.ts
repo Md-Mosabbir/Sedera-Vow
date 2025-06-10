@@ -1,10 +1,10 @@
 "use server";
 
-import { Product } from "@/types/Product";
+import { Product, ProductsResponse } from "@/types/Product";
 
 export const getProducts = async (
   queryString: string = "",
-): Promise<Product[]> => {
+): Promise<ProductsResponse> => {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/shop${queryString}`,

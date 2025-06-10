@@ -1,38 +1,51 @@
+export interface ReviewUser {
+  _id: string;
+  username?: string;
+  profilePicture?: string;
+}
+
+export interface Review {
+  user: string | ReviewUser;
+  rating: number | null;
+  comment: string;
+  _id: string;
+  createdAt: string;
+}
+
+export type ProductTier = "Gold" | "Diamond" | "Platinum";
+export type ProductCategory = "Rings" | "Necklace" | "Pendant";
+
 export interface Product {
   _id: string;
   name: string;
   description: string;
   price: number;
-  category: string;
+  category: ProductCategory;
   imageUrl: string;
   inStock: boolean;
   numberInStock: number;
   averageRating: number;
   numberOfReviews: number;
-  tier: string;
+  tier: ProductTier;
   featured: boolean;
   reviews: Review[];
-  createdAt: string; // or Date
-  updatedAt: string; // or Date
+  createdAt: string;
+  updatedAt: string;
   __v: number;
 }
 
-export interface Review {
-  user: {
-    _id: string;
-    username: string;
-    profilePicture: string;
-  };
-  rating: number;
-  comment: string;
-  _id: string;
-  createdAt: string; // or Date
+export interface ProductsResponse {
+  products: Product[];
+  page: number;
+  totalResults: number;
+  limit: number;
+  totalPages: number;
 }
 
 export type ProductFilterParams = {
   search?: string;
-  tiers?: string[];
-  category?: string;
+  tiers?: ProductTier[];
+  category?: ProductCategory;
   minPrice?: number;
   maxPrice?: number;
   inStock?: string | boolean;

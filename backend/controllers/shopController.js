@@ -22,7 +22,7 @@ export const getProducts = asyncHandler(async (req, res) => {
   const inStock = req.query.inStock === "true"
 
   const sort = req.query.sort || "createdAt"
-  const order = req.query.order === "asc" ? 1 : -1
+  const order = req.query.order === "1" ? 1 : -1
 
   const matchCondition = {}
 
