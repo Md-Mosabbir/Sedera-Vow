@@ -5,16 +5,27 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import Data from "./components/order-data-table";
 import { OrdersResponse } from "@/types/Orders";
+import { orderFilterSchema } from "@/types/config/filters";
+import OrderFilter from "./components/order-filter";
+import OrderSorting from "./components/order-sort";
 
 const DataTable = ({ orders }: { orders: OrdersResponse }) => {
   return (
-    <DataViewerProvider schema={{}}>
-      <div className=" w-full flex flex-col gap-3  h-full ">
+    <DataViewerProvider schema={orderFilterSchema}>
+      <div className="flex h-full w-full flex-col">
         <Header title="Orders" />
-        <div className="px-5">
-          <Data orders={orders.orders} />
+        <div className="flex flex-col gap-3 px-5">
+          <div className="flex justify-between">
+            <OrderFilter />
+            <OrderSorting />
+          </div>
+          <div className="h-[calc(100vh-13rem)] overflow-auto rounded-md ">
+            <Data orders={orders.orders} />
+          </div>
         </div>
-        <Footer totalPages={orders.totalPages} />
+        <div className="mt-auto">
+          <Footer totalPages={orders.totalPages} />
+        </div>
       </div>
     </DataViewerProvider>
   );

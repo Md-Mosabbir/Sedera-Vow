@@ -174,46 +174,84 @@ export const getOrders = asyncHandler(async (req, res) => {
   const {
     page = 1,
     limit = 10,
-    sortBy = "createdAt",
+    sort = "createdAt",
+    order = "-1",
     status,
-    order = "desc",
+    paymentMethod,
+    userId,
+    productId,
+    startDate,
+    endDate,
+    search,
   } = req.query
 
   const pageNumber = parseInt(page)
   const limitNumber = parseInt(limit)
 
   try {
-    const pipeline = []
+    const matchStage = {}
 
     if (status) {
+      matchStage.orderStatus = status
+    }
+
+    if (paymentMethod) {
+      matchStage.paymentMethod = paymentMethod
+    }
+
+    if (userId) {
+      matchStage.user = userId
+    }
+
+    if (productId) {
+      matchStage["orderItems.productId"] = productId
+    }
+
+    if (startDate && endDate) {
+      matchStage.createdAt = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      }
+    }
+
+    if (search) {
+      matchStage["orderItems.name"] = {
+        $regex: search,
+        $options: "i",
+      }
+    }
+
+    const pipeline = []
+
+    // Match stage
+    pipeline.push({ $match: matchStage })
+
+    // Add totalAmount field if sorting by it
+    if (sort === "totalAmount") {
       pipeline.push({
-        $match: {
-          orderStatus: status,
+        $addFields: {
+          totalAmount: { $sum: "$orderItems.subtotal" },
         },
       })
     }
 
-    if (sortBy) {
-      pipeline.push({
-        $sort: {
-          [sortBy]: order === "desc" ? -1 : 1,
-        },
-      })
-    }
-
+    // Sort stage
     pipeline.push({
-      $skip: (pageNumber - 1) * limitNumber,
+      $sort: {
+        [sort]: order === "-1" ? -1 : 1,
+      },
     })
 
-    pipeline.push({
-      $limit: limitNumber,
-    })
+    // Pagination stages
+    pipeline.push(
+      { $skip: (pageNumber - 1) * limitNumber },
+      { $limit: limitNumber },
+    )
 
     const orderData = await Order.aggregate(pipeline)
 
-    const totalOrders = await Order.countDocuments(
-      status ? { orderStatus: status } : {},
-    )
+    // Count total matching documents
+    const totalOrders = await Order.countDocuments(matchStage)
     const totalPages = Math.ceil(totalOrders / limitNumber)
 
     if (totalOrders === 0) {
@@ -228,9 +266,10 @@ export const getOrders = asyncHandler(async (req, res) => {
       totalPages,
     })
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error fetching orders", error: error.message })
+    res.status(500).json({
+      message: "Error fetching orders",
+      error: error.message,
+    })
   }
 })
 

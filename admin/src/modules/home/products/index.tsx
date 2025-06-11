@@ -20,7 +20,9 @@ const DataTable = ({ products }: { products: ProductsResponse }) => {
             <ProductSorting />
           </div>
           <div className="my-5">
-            <Data products={products.products} />
+            <div className="h-[calc(100vh-13rem)] overflow-auto rounded-md ">
+              <Data products={products.products} />
+            </div>
           </div>
         </div>
         <Footer totalPages={products.totalPages} />
