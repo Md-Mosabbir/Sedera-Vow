@@ -9,11 +9,9 @@ export default async function OrdersPage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  // First await the searchParams
   const resolvedParams = await Promise.resolve(searchParams);
   const params = new URLSearchParams();
 
-  // Now safely use the resolved params
   for (const [key, value] of Object.entries(resolvedParams)) {
     if (Array.isArray(value)) {
       params.set(key, value.join(","));

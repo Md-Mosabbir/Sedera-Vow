@@ -27,9 +27,12 @@ export const getProducts = async (
 };
 
 export const getProductById = async (id: string): Promise<Product> => {
-  const res = await fetch(`${process.env.SEDERA_BASE_URL}/shop/${id}`, {
-    next: { revalidate: 3600 },
-  });
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/shop/${id}`,
+    {
+      next: { revalidate: 3600 },
+    },
+  );
 
   return res.json();
 };

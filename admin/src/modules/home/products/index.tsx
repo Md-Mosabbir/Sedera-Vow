@@ -14,7 +14,7 @@ const DataTable = ({ products }: { products: ProductsResponse }) => {
     <DataViewerProvider schema={productFilterSchema}>
       <div className=" w-full flex flex-col gap-3  h-full ">
         <Header title="Products" />
-        <div className="px-5">
+        <div>
           <div className="flex justify-between">
             <ProductFilters />
             <ProductSorting />

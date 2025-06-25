@@ -10,7 +10,7 @@ const HomeLayoutTemplate = ({
   return (
     <SidebarProvider>
       <AppSidebar />
-      <main className="w-full h-screen">{children}</main>
+      <main className="w-full h-screen px-4">{children}</main>
     </SidebarProvider>
   );
 };

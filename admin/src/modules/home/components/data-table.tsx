@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -33,6 +33,7 @@ export function DataTable<TData, TValue>({
   });
 
   const router = useRouter();
+  const pathname = usePathname();
 
   return (
     <div className="rounded-md border ">
@@ -60,7 +61,7 @@ export function DataTable<TData, TValue>({
             table.getRowModel().rows.map((row) => (
               <TableRow
                 key={row.id}
-                onClick={() => router.push(`/home/orders/${row.original._id}`)}
+                onClick={() => router.push(`${pathname}/${row.original._id}`)}
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell) => (
