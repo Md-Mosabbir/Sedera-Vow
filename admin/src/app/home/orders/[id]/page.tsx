@@ -10,7 +10,6 @@ interface OrderPageProps {
 export default async function OrderPage({ params }: OrderPageProps) {
   try {
     const order = await getOrder(params.id);
-
     return (
       <div className="p-6 space-y-4">
         <h1 className="text-2xl font-bold">Order #{order._id}</h1>

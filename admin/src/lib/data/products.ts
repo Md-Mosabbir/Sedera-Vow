@@ -30,7 +30,7 @@ export const getProductById = async (id: string): Promise<Product> => {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/shop/${id}`,
     {
-      next: { revalidate: 3600 },
+      cache: "no-store"
     },
   );
 
@@ -40,7 +40,8 @@ export const getProductById = async (id: string): Promise<Product> => {
 export const getFeaturedProducts = async (): Promise<Product[]> => {
   try {
     const res = await fetch(`${process.env.SEDERA_BASE_URL}/shop/featured`, {
-      next: { revalidate: 60 },
+      //next: { revalidate: 60 },
+      cache: "no-store"
     });
 
     return res.json();

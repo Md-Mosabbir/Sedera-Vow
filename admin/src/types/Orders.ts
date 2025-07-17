@@ -17,9 +17,16 @@ export interface ShippingAddress {
 
 export type OrderStatus = "Processing" | "Shipped" | "Delivered" | "Cancelled";
 
+export interface User {
+
+  id: string,
+  username: string,
+  email: string
+}
+
 export interface Order {
   _id: string;
-  user: string;
+  user: string | User;
   orderItems: OrderItem[];
   shippingAddress: ShippingAddress;
   paymentMethod: string;

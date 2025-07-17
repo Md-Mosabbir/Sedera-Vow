@@ -1,3 +1,4 @@
+"use client";
 import { Product } from "@/types/Product";
 import React from "react";
 import { ProductHeader } from "./components/product-header-card";
@@ -9,7 +10,7 @@ import { ProductStatusCard } from "./components/product-status-card";
 import { TimestampsCard } from "./components/timestamp-card";
 import { ReviewsSection } from "./components/review-section";
 
-const ProductTemplate = async ({ product }: { product: Product }) => {
+const ProductTemplate = ({ product }: { product: Product }) => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <ProductHeader />

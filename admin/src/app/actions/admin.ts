@@ -1,7 +1,6 @@
 "use server";
 
 import { cookies } from "next/headers";
-
 export async function createProduct(formData: FormData) {
   // Get your auth cookie
   const cookieStore = cookies();
@@ -21,7 +20,26 @@ export async function createProduct(formData: FormData) {
   return res.json();
 }
 
-export async function setFeatured(id: string) {
+export async function updateProduct(formData: FormData, id: string) {
+  const cookieStore = cookies();
+  const tokenCookie = (await cookieStore).get("token");
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/product/${id}`,
+    {
+      method: "PUT",
+
+      headers: {
+        // Forward the cookie header manually
+        Cookie: tokenCookie ? `token=${tokenCookie.value}` : "",
+      },
+      body: formData,
+    },
+  );
+
+  return res.json();
+}
+
+export async function toggleFeatured(id: string) {
   const cookieStore = cookies();
   const tokenCookie = (await cookieStore).get("token");
 
@@ -34,6 +52,5 @@ export async function setFeatured(id: string) {
       },
     },
   );
-
   return res.json();
 }
