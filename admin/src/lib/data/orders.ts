@@ -39,7 +39,7 @@ export const getOrder = async (id: string): Promise<Order> => {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/order/${id}`,
       {
-        next: { revalidate: 60 },
+        cache: "no-store",
         headers: {
           Cookie: tokenCookie ? `token=${tokenCookie.value}` : "",
         },

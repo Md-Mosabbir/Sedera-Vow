@@ -1,9 +1,30 @@
-"use client"
+'use client'
 
+import {
+	deliverOrder,
+	shipOrder,
+	cancelOrder,
+	processOrder
+} from "@/app/actions/admin"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, Truck, CheckCircle, XCircle, Calendar, RotateCcw } from "lucide-react"
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+} from "@/components/ui/card"
+import { OrderStatus } from "@/types/Orders"
+import {
+	Package,
+	Truck,
+	CheckCircle,
+	XCircle,
+	Calendar,
+	RotateCcw,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { useTransition } from "react"
 
 const statusConfig = {
 	Processing: { color: "bg-yellow-500", icon: Package },
@@ -13,13 +34,19 @@ const statusConfig = {
 }
 
 interface OrderStatusCardProps {
-	currentStatus: string
+	_id: string
+	currentStatus: OrderStatus
 	deliveredAt?: string
-	isLoading: boolean
-	onStatusChange: (status: string) => void
 }
 
-export function OrderStatusCard({ currentStatus, deliveredAt, isLoading, onStatusChange }: OrderStatusCardProps) {
+export function OrderStatusCard({
+	_id,
+	currentStatus,
+	deliveredAt,
+}: OrderStatusCardProps) {
+	const [isPending, startTransition] = useTransition()
+	const router = useRouter()
+
 	const getAvailableActions = () => {
 		switch (currentStatus) {
 			case "Processing":
@@ -36,13 +63,36 @@ export function OrderStatusCard({ currentStatus, deliveredAt, isLoading, onStatu
 			case "Delivered":
 				return []
 			case "Cancelled":
-				return [{ label: "Revert to Processing", status: "Processing", icon: RotateCcw, variant: "outline" as const }]
+				return [
+					{ label: "Revert to Processing", status: "Processing", icon: RotateCcw, variant: "outline" as const },
+				]
 			default:
 				return []
 		}
 	}
 
-	const StatusIcon = statusConfig[currentStatus as keyof typeof statusConfig]?.icon || Package
+	const StatusIcon = statusConfig[currentStatus]?.icon || Package
+
+	const handleStatusChange = (newStatus: OrderStatus) => {
+		startTransition(async () => {
+			switch (newStatus) {
+				case "Delivered":
+					await deliverOrder(_id)
+					break
+				case "Shipped":
+					await shipOrder(_id)
+					break
+				case "Cancelled":
+					await cancelOrder(_id)
+					break
+				case "Processing":
+					await processOrder(_id)
+					break
+			}
+
+			await router.refresh()
+		})
+	}
 
 	return (
 		<Card>
@@ -52,7 +102,7 @@ export function OrderStatusCard({ currentStatus, deliveredAt, isLoading, onStatu
 						<StatusIcon className="h-5 w-5" />
 						Order Status
 					</CardTitle>
-					<Badge className={`${statusConfig[currentStatus as keyof typeof statusConfig]?.color} text-white`}>
+					<Badge className={`${statusConfig[currentStatus]?.color} text-white`}>
 						{currentStatus}
 					</Badge>
 				</div>
@@ -64,8 +114,8 @@ export function OrderStatusCard({ currentStatus, deliveredAt, isLoading, onStatu
 							key={action.status}
 							variant={action.variant}
 							size="sm"
-							onClick={() => onStatusChange(action.status)}
-							disabled={isLoading}
+							onClick={() => handleStatusChange(action.status as OrderStatus)}
+							disabled={isPending}
 							className="flex items-center gap-2"
 						>
 							<action.icon className="h-4 w-4" />
@@ -73,6 +123,7 @@ export function OrderStatusCard({ currentStatus, deliveredAt, isLoading, onStatu
 						</Button>
 					))}
 				</div>
+
 				{currentStatus === "Delivered" && deliveredAt && (
 					<p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
 						<Calendar className="h-4 w-4" />

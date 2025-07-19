@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 export async function createProduct(formData: FormData) {
   // Get your auth cookie
@@ -54,3 +55,32 @@ export async function toggleFeatured(id: string) {
   );
   return res.json();
 }
+
+
+const updateOrderStatus = async (id: string, action: string) => {
+  const cookieStore = cookies();
+  const tokenCookie = (await cookieStore).get("token");
+
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/order/${id}/${action}`,
+    {
+      method: "PUT",
+      headers: {
+        Cookie: tokenCookie ? `token=${tokenCookie.value}` : "",
+      },
+    },
+  );
+
+  const data = await res.json();
+
+  revalidatePath(`/home/orders/${id}`);
+
+  return data;
+};
+
+// Then export wrapped versions:
+export const cancelOrder = async (id: string) => updateOrderStatus(id, "cancel");
+export const shipOrder = async (id: string) => updateOrderStatus(id, "ship");
+export const deliverOrder = async (id: string) => updateOrderStatus(id, "deliver");
+export const processOrder = async (id: string) => updateOrderStatus(id, "process");
+
