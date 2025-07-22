@@ -193,6 +193,7 @@ export const loginUser = asyncHandler(async (req, res) => {
 
       // eslint-disable-next-line no-undef
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     })
 
     res.status(200).json({

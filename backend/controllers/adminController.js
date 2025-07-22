@@ -511,44 +511,35 @@ export const shipOrder = asyncHandler(async (req, res) => {
 // @access Private/Admin
 
 export const deliverOrder = asyncHandler(async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id)
+  const order = await Order.findById(req.params.id)
 
-    // Check if the order exists
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" })
-    }
-
-    // Validate current order status before updating
-    if (order.orderStatus === "Delivered") {
-      return res
-        .status(400)
-        .json({ message: "Order has already been delivered" })
-    }
-
-    if (order.orderStatus === "Cancelled") {
-      return res.status(400).json({ message: "Order has been cancelled" })
-    }
-
-    if (order.orderStatus !== "Shipped") {
-      return res
-        .status(400)
-        .json({ message: "Order must be shipped before it can be delivered" })
-    }
-
-    // Update the order status to "Delivered" and set deliveredAt in one operation
-    order.orderStatus = "Delivered"
-    order.deliveredAt = Date.now()
-    await order.save()
-
-    // Respond with the updated order
-    res.status(200).json(order)
-  } catch (error) {
-    // Handle any errors that may occur
-    res
-      .status(500)
-      .json({ message: "Error delivering the order", error: error.message })
+  // Check if the order exists
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" })
   }
+
+  // Validate current order status before updating
+  if (order.orderStatus === "Delivered") {
+    return res.status(400).json({ message: "Order has already been delivered" })
+  }
+
+  if (order.orderStatus === "Cancelled") {
+    return res.status(400).json({ message: "Order has been cancelled" })
+  }
+
+  if (order.orderStatus !== "Shipped") {
+    return res
+      .status(400)
+      .json({ message: "Order must be shipped before it can be delivered" })
+  }
+
+  // Update the order status to "Delivered" and set deliveredAt in one operation
+  order.orderStatus = "Delivered"
+  order.deliveredAt = Date.now()
+  await order.save()
+
+  // Respond with the updated order
+  res.status(200).json(order)
 })
 
 // @desc Update an order to Processing
@@ -556,56 +547,46 @@ export const deliverOrder = asyncHandler(async (req, res) => {
 // @access Private/Admin
 
 export const processOrder = asyncHandler(async (req, res) => {
-  try {
-    const order = await Order.findById(req.params.id)
+  const order = await Order.findById(req.params.id)
 
-    if (!order) {
-      return res.status(404).json({ message: "Order not found" })
-    }
-
-    if (order.orderStatus === "Delivered") {
-      return res
-        .status(400)
-        .json({ message: "Order has already been delivered" })
-    }
-
-    if (order.orderStatus === "Cancelled") {
-      return res.status(400).json({ message: "Order is already cancelled" })
-    }
-
-    if (order.orderStatus === "Processing") {
-      return res
-        .status(400)
-        .json({ message: "Order is already being processed" })
-    }
-
-    const products = order.orderItems
-
-    products.forEach(async (item) => {
-      const product = await Product.findById(item.productId).select(
-        "numberInStock inStock",
-      )
-
-      if (product) {
-        product.numberInStock += item.quantity
-
-        if (product.inStock === false) {
-          product.inStock = true
-        }
-
-        await product.save()
-      }
-    })
-
-    order.orderStatus = "Processing"
-    await order.save()
-
-    res.status(200).json(order)
-  } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error processing the order", error: error.message })
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" })
   }
+
+  if (order.orderStatus === "Delivered") {
+    return res.status(400).json({ message: "Order has already been delivered" })
+  }
+
+  if (order.orderStatus === "Cancelled") {
+    return res.status(400).json({ message: "Order is already cancelled" })
+  }
+
+  if (order.orderStatus === "Processing") {
+    return res.status(400).json({ message: "Order is already being processed" })
+  }
+
+  const products = order.orderItems
+
+  products.forEach(async (item) => {
+    const product = await Product.findById(item.productId).select(
+      "numberInStock inStock",
+    )
+
+    if (product) {
+      product.numberInStock += item.quantity
+
+      if (product.inStock === false) {
+        product.inStock = true
+      }
+
+      await product.save()
+    }
+  })
+
+  order.orderStatus = "Processing"
+  await order.save()
+
+  res.status(200).json(order)
 })
 
 //! TODO: Learn
