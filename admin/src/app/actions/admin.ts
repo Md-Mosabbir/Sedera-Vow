@@ -40,6 +40,42 @@ export async function updateProduct(formData: FormData, id: string) {
   return res.json();
 }
 
+
+
+export async function deleteProduct(id: string) {
+  try {
+    const cookieStore = cookies();
+    const tokenCookie = (await cookieStore).get("token");
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SEDERA_BASE_URL}/admin/product/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Cookie: tokenCookie ? `token=${tokenCookie.value}` : "",
+        },
+      }
+    );
+
+    if (!res.ok) {
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorBody = await res.json();
+        throw new Error(errorBody.message || "Failed to delete product");
+      } else {
+        const text = await res.text();
+        throw new Error(`Unexpected response: ${text}`);
+      }
+    }
+
+    return res.json();
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    throw error;
+  }
+}
+
+
 export async function toggleFeatured(id: string) {
   const cookieStore = cookies();
   const tokenCookie = (await cookieStore).get("token");

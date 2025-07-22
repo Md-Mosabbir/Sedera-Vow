@@ -1,7 +1,7 @@
 import { parseFilters } from "@/utils/parseFilters";
 import { stringifyFilters } from "@/utils/stringifyFilters";
 import { productFilterSchema } from "@/types/config/filters";
-import { getProducts } from "@/lib/data/products";
+import { getAdminProducts } from "@/lib/data/products";
 import DataTable from "@/modules/home/products";
 
 export default async function Products({
@@ -24,7 +24,7 @@ export default async function Products({
   //TODO: set fetch product type
   const filters = parseFilters(params, productFilterSchema);
   const queryString = stringifyFilters(filters);
-  const products = await getProducts(queryString);
+  const products = await getAdminProducts(queryString);
 
   return <DataTable products={products} />;
 }

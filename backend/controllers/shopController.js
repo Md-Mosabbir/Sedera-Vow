@@ -24,7 +24,12 @@ export const getProducts = asyncHandler(async (req, res) => {
   const sort = req.query.sort || "createdAt"
   const order = req.query.order === "1" ? 1 : -1
 
-  const matchCondition = {}
+  const matchCondition = {
+    $or: [
+      { isDeleted: false },
+      { isDeleted: { $exists: false } }, // Include docs without isDeleted
+    ],
+  }
 
   if (search) {
     matchCondition.name = {

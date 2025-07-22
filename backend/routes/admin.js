@@ -13,12 +13,14 @@ import {
   shipOrder,
   deliverOrder,
   processOrder,
+  getProducts,
 } from "../controllers/adminController.js"
 import { upload } from "../middleware/multer.js"
 
 const router = express.Router()
 
 router.get("/", protect, admin, getAdmin)
+router.get("/products", admin, getProducts)
 router.post("/product", protect, admin, upload.single("image"), createProduct)
 router.put(
   "/product/:id",
@@ -28,8 +30,7 @@ router.put(
   updateProduct,
 )
 router.put("/product/:id/featured", protect, admin, featureProduct)
-//TODO: !Incomplete
-router.delete("/:id", protect, admin, deleteProduct)
+router.delete("/product/:id", protect, admin, deleteProduct)
 
 router.get("/orders", protect, admin, getOrders)
 router.get("/order/:id", protect, admin, getOrderById)

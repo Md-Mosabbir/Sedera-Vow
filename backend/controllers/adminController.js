@@ -1,15 +1,118 @@
 import asyncHandler from "express-async-handler"
 import { check, validationResult } from "express-validator"
 import Product from "../models/Product.js"
+import Shop from "../models/Product.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import fs from "fs"
 import Order from "../models/Order.js"
 import Sales from "../models/Sales.js"
 import { buildSalesPipeline } from "../utils/salesAggregate.js"
+import mongoose from "mongoose"
 
 export const getAdmin = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Welcome to the admin route" })
 })
+
+// @desc Get all products even deleted ones
+// // @route GET /products
+// @access Private/Admin
+export const getProducts = asyncHandler(async (req, res) => {
+  // Page limits
+  const page = parseInt(req.query.page) || 1
+  const limit = parseInt(req.query.limit) || 10
+  const startIndex = (page - 1) * limit
+
+  // Filter, Search, and Sort
+  const search = req.query.search || ""
+  const tiers = req.query.tiers ? req.query.tiers.split(",") : []
+  const category = req.query.category || ""
+  const minPrice = parseFloat(req.query.minPrice) || 0
+  const maxPrice = parseFloat(req.query.maxPrice) || Infinity
+  const inStock = req.query.inStock === "true"
+
+  const sort = req.query.sort || "createdAt"
+  const order = req.query.order === "1" ? 1 : -1
+
+  const matchCondition = {}
+
+  if (search) {
+    matchCondition.name = {
+      $regex: search,
+      $options: "i",
+    }
+  }
+
+  if (tiers.length > 0) {
+    matchCondition.tier = {
+      $in: tiers,
+    }
+  }
+
+  if (category) {
+    matchCondition.category = category
+  }
+
+  if (minPrice || maxPrice !== Infinity) {
+    matchCondition.price = {
+      $gte: minPrice,
+      $lte: maxPrice,
+    }
+  }
+
+  if (inStock) {
+    matchCondition.inStock = inStock
+  }
+
+  const totalPipeline = [
+    {
+      $match: matchCondition,
+    },
+    {
+      $count: "total",
+    },
+  ]
+
+  const total = await Shop.aggregate(totalPipeline)
+
+  const totalResults = total.length > 0 ? total[0].total : 0
+
+  if (totalResults === 0) {
+    return res.status(200).json({ products: [], message: "No products found" })
+  }
+
+  if (minPrice > maxPrice) {
+    return res.status(400).json({ message: "Invalid price range" })
+  }
+
+  const productPipeline = [
+    {
+      $match: matchCondition,
+    },
+    {
+      $sort: {
+        [sort]: order,
+      },
+    },
+    {
+      $skip: startIndex,
+    },
+    {
+      $limit: limit,
+    },
+  ]
+
+  const products = await Shop.aggregate(productPipeline)
+  const totalPages = Math.ceil(totalResults / limit)
+
+  res.status(200).json({
+    products,
+    page,
+    totalResults,
+    limit,
+    totalPages,
+  })
+})
+
 // @desc Create a product
 // @route POST /create-product
 // @access Private/Admin
@@ -143,23 +246,48 @@ export const updateProduct = asyncHandler(async (req, res) => {
 // @access Private/Admin
 
 export const featureProduct = asyncHandler(async (req, res) => {
-  const product = await Product.findById(req.params.id)
+  const product = await Product.findOne({
+    _id: req.params.id,
+    isDeleted: { $ne: true },
+  })
+
   if (!product) {
-    return res.status(404).json({ message: "Product not found" })
+    return res.status(404).json({ message: "Product not found or is deleted" })
   }
 
   product.featured = !product.featured
 
   await product.save()
+
   res.status(200).json(product)
 })
 
 // @desc Delete a product
-// @route DELETE /delete-product/:id
+// @route DELETE /product/:id
 // @access Private/Admin
 // TODO:
 export const deleteProduct = asyncHandler(async (req, res) => {
-  res.json({ message: "Delete a product function is under development" })
+  const params = req.params.id
+
+  if (!mongoose.Types.ObjectId.isValid(params)) {
+    return res.status(400).json({ message: "Invalid product ID format" })
+  }
+
+  const product = await Product.findById(params)
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" })
+  }
+
+  if (product.isDeleted) {
+    return res.status(400).json({ message: "Product already deleted" })
+  }
+
+  product.isDeleted = true
+
+  await product.save()
+
+  res.json({ message: "Product deleted successfully" })
 })
 
 // ------------------ ORDERS ------------------ \\
